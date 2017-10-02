@@ -1,0 +1,53 @@
+version: "3"
+
+services:
+
+  tdb:
+    image: influxdb
+    container_name: influxdb_tdb
+    ports:
+      - 8083:8083
+      - 8086:8086
+    volumes:
+      - ./influxdb:/var/lib/influxdb
+      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
+    networks:
+      - back-tier
+ 
+  agent:
+    image: telegraf
+    container_name: telegraf_agent
+    environment:
+      - HOST_PROC=/rootfs/proc
+      - HOST_SYS=/rootfs/sys
+      - HOST_ETC=/rootfs/etc
+    volumes:
+      - ./telegraf:/var/lib/telegraf
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/rootfs/sys:ro
+      - /proc:/rootfs/proc:ro
+      - /etc:/rootfs/etc:ro
+    networks:
+      - back-tier
+    depends_on:
+      - tdb
+
+  monitor:
+    image: grafana/grafana
+    container_name: grafana_monitor
+    ports: ["3000:3000"]
+    environment:
+      - GF_SERVER_ROOT_URL=http://localhost
+      - GF_SECURITY_ADMIN_PASSWORD=somepasswordhere
+    volumes:
+      - ./grafana/etc/grafana:/etc/grafana
+      - ./grafana/var/lib/grafana:/var/lib/grafana
+      - ./grafana/var/log/grafana:/var/log/grafana
+    networks:
+      - back-tier
+    depends_on:
+      - tdb
+
+networks:
+  back-tier:
