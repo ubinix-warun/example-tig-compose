@@ -32,6 +32,8 @@ services:
       - back-tier
     depends_on:
       - tdb
+    links:
+      - tdb
 
   monitor:
     image: grafana/grafana
@@ -47,6 +49,8 @@ services:
     networks:
       - back-tier
     depends_on:
+      - tdb
+    links:
       - tdb
 
 networks:
